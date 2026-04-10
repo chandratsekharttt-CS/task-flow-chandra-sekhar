@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Task, CreateTaskPayload, UpdateTaskPayload, TaskStatus, TaskPriority } from '../types';
+import client from '../api/client';
 
 interface Props {
   isOpen: boolean;
@@ -16,11 +17,20 @@ const TaskModal: React.FC<Props> = ({ isOpen, onClose, onSave, onDelete, task })
   const [status, setStatus] = useState<TaskStatus>('todo');
   const [priority, setPriority] = useState<TaskPriority>('medium');
   const [dueDate, setDueDate] = useState('');
+  const [assigneeId, setAssigneeId] = useState('');
+  const [users, setUsers] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const isEditMode = !!task;
+
+  useEffect(() => {
+    // Fetch users when modal opens
+    if (isOpen) {
+      client.get('/users').then((res: any) => setUsers(res.data)).catch(console.error);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (task) {
@@ -29,12 +39,14 @@ const TaskModal: React.FC<Props> = ({ isOpen, onClose, onSave, onDelete, task })
       setStatus(task.status);
       setPriority(task.priority);
       setDueDate(task.due_date ? task.due_date.split('T')[0] : '');
+      setAssigneeId(task.assignee_id || '');
     } else {
       setTitle('');
       setDescription('');
       setStatus('todo');
       setPriority('medium');
       setDueDate('');
+      setAssigneeId('');
     }
     setError('');
     setFieldErrors({});
@@ -59,6 +71,7 @@ const TaskModal: React.FC<Props> = ({ isOpen, onClose, onSave, onDelete, task })
         description: description.trim() || undefined,
         status,
         priority,
+        assignee_id: assigneeId || null,
         due_date: dueDate || null,
       };
       await onSave(payload);
@@ -145,15 +158,27 @@ const TaskModal: React.FC<Props> = ({ isOpen, onClose, onSave, onDelete, task })
             </div>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="task-due-date">Due Date</label>
-            <input
-              id="task-due-date"
-              type="date"
-              className="input"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-            />
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="task-due-date">Due Date</label>
+              <input
+                id="task-due-date"
+                type="date"
+                className="input"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="task-assignee">Assignee</label>
+              <select id="task-assignee" className="input" value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)}>
+                <option value="">Unassigned</option>
+                {users.map(u => (
+                  <option key={u.id} value={u.id}>{u.name}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="modal-footer">

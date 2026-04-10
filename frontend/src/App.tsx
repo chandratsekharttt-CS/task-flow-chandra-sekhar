@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProjectsPage from './pages/ProjectsPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
+import MyTasksPage from './pages/MyTasksPage';
 
 const App: React.FC = () => {
   return (
@@ -22,6 +23,14 @@ const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <ProjectsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/my-tasks"
+              element={
+                <ProtectedRoute>
+                  <MyTasksPage />
                 </ProtectedRoute>
               }
             />

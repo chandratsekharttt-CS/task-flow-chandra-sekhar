@@ -154,3 +154,17 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	}
 	respondJSON(w, http.StatusOK, user)
 }
+
+// ListUsers handles GET /api/users — returns all users.
+func (h *AuthHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
+	users, err := h.userRepo.ListAll(r.Context())
+	if err != nil {
+		slog.Error("failed to list users", "error", err)
+		respondError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	if users == nil {
+		users = []models.User{}
+	}
+	respondJSON(w, http.StatusOK, users)
+}

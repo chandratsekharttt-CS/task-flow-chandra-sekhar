@@ -93,8 +93,9 @@ func main() {
 	r.Group(func(r chi.Router) {
 		r.Use(authMiddle.Authenticate)
 
-		// Auth
+		// Auth & Users
 		r.Get("/api/auth/me", authHandler.Me)
+		r.Get("/api/users", authHandler.ListUsers)
 
 		// Projects
 		r.Get("/api/projects", projectHandler.List)
@@ -105,6 +106,7 @@ func main() {
 		r.Get("/api/projects/{id}/stats", projectHandler.Stats)
 
 		// Tasks
+		r.Get("/api/tasks/me", taskHandler.MyTasks)
 		r.Get("/api/projects/{id}/tasks", taskHandler.List)
 		r.Post("/api/projects/{id}/tasks", taskHandler.Create)
 		r.Patch("/api/tasks/{id}", taskHandler.Update)

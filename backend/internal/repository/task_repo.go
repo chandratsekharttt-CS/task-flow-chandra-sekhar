@@ -200,3 +200,27 @@ func (r *TaskRepository) ListByProjectNoPage(ctx context.Context, projectID stri
 	}
 	return tasks, rows.Err()
 }
+
+// ListByAssignee returns all tasks assigned to a specific user across all projects.
+func (r *TaskRepository) ListByAssignee(ctx context.Context, assigneeID string) ([]models.Task, error) {
+	query := fmt.Sprintf("SELECT %s FROM tasks WHERE assignee_id = $1 ORDER BY created_at DESC", taskColumns)
+	rows, err := r.pool.Query(ctx, query, assigneeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tasks []models.Task
+	for rows.Next() {
+		var t models.Task
+		if err := rows.Scan(
+			&t.ID, &t.Title, &t.Description, &t.Status, &t.Priority,
+			&t.ProjectID, &t.AssigneeID, &t.CreatedBy, &t.DueDate,
+			&t.CreatedAt, &t.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, t)
+	}
+	return tasks, rows.Err()
+}

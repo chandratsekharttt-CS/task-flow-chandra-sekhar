@@ -146,6 +146,24 @@ func (h *TaskHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID := middleware.GetUserID(r.Context())
+
+	// Check authorization: project owner OR task assignee
+	project, err := h.projectRepo.GetByID(r.Context(), task.ProjectID)
+	if err != nil {
+		slog.Error("failed to get project", "error", err, "project_id", task.ProjectID)
+		respondError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	isProjectOwner := project != nil && project.OwnerID == userID
+	isAssignee := task.AssigneeID != nil && *task.AssigneeID == userID
+
+	if !isProjectOwner && !isAssignee {
+		respondError(w, http.StatusForbidden, "forbidden")
+		return
+	}
+
 	// Parse body as map for PATCH semantics
 	var body map[string]interface{}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -220,4 +238,22 @@ func (h *TaskHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	slog.Info("task deleted", "task_id", taskID, "user_id", userID)
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// MyTasks handles GET /api/tasks/me — returns tasks assigned to the current user.
+func (h *TaskHandler) MyTasks(w http.ResponseWriter, r *http.Request) {
+	userID := middleware.GetUserID(r.Context())
+
+	tasks, err := h.taskRepo.ListByAssignee(r.Context(), userID)
+	if err != nil {
+		slog.Error("failed to list assigned tasks", "error", err, "user_id", userID)
+		respondError(w, http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	if tasks == nil {
+		tasks = []models.Task{}
+	}
+
+	respondJSON(w, http.StatusOK, tasks)
 }
