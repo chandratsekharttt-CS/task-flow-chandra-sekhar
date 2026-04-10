@@ -9,9 +9,11 @@ interface Props {
   onDelete?: (taskId: string) => Promise<void>;
   task?: Task | null;          // null = create mode, Task = edit mode
   projectId: string;
+  isProjectOwner?: boolean;
+  isAssignee?: boolean;
 }
 
-const TaskModal: React.FC<Props> = ({ isOpen, onClose, onSave, onDelete, task }) => {
+const TaskModal: React.FC<Props> = ({ isOpen, onClose, onSave, onDelete, task, isProjectOwner = true, isAssignee = false }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<TaskStatus>('todo');
@@ -24,6 +26,7 @@ const TaskModal: React.FC<Props> = ({ isOpen, onClose, onSave, onDelete, task })
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const isEditMode = !!task;
+  const isReadOnlyFields = isEditMode && !isProjectOwner && isAssignee;
 
   useEffect(() => {
     // Fetch users when modal opens
@@ -121,6 +124,7 @@ const TaskModal: React.FC<Props> = ({ isOpen, onClose, onSave, onDelete, task })
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter task title"
+              disabled={isReadOnlyFields}
               autoFocus
             />
             {fieldErrors.title && <span className="field-error">{fieldErrors.title}</span>}
@@ -135,6 +139,7 @@ const TaskModal: React.FC<Props> = ({ isOpen, onClose, onSave, onDelete, task })
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Optional description"
               rows={3}
+              disabled={isReadOnlyFields}
             />
           </div>
 
@@ -150,7 +155,7 @@ const TaskModal: React.FC<Props> = ({ isOpen, onClose, onSave, onDelete, task })
 
             <div className="form-group">
               <label htmlFor="task-priority">Priority</label>
-              <select id="task-priority" className="input" value={priority} onChange={(e) => setPriority(e.target.value as TaskPriority)}>
+              <select id="task-priority" className="input" value={priority} onChange={(e) => setPriority(e.target.value as TaskPriority)} disabled={isReadOnlyFields}>
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
@@ -167,12 +172,13 @@ const TaskModal: React.FC<Props> = ({ isOpen, onClose, onSave, onDelete, task })
                 className="input"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
+                disabled={isReadOnlyFields}
               />
             </div>
             
             <div className="form-group">
               <label htmlFor="task-assignee">Assignee</label>
-              <select id="task-assignee" className="input" value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)}>
+              <select id="task-assignee" className="input" value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)} disabled={isReadOnlyFields}>
                 <option value="">Unassigned</option>
                 {users.map(u => (
                   <option key={u.id} value={u.id}>{u.name}</option>
@@ -182,7 +188,7 @@ const TaskModal: React.FC<Props> = ({ isOpen, onClose, onSave, onDelete, task })
           </div>
 
           <div className="modal-footer">
-            {isEditMode && onDelete && (
+            {isEditMode && onDelete && isProjectOwner && (
               <button type="button" className="btn btn-danger" onClick={handleDelete} disabled={saving} id="task-delete-btn">
                 Delete
               </button>

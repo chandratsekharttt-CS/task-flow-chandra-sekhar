@@ -176,6 +176,16 @@ func (h *TaskHandler) Update(w http.ResponseWriter, r *http.Request) {
 		respondValidationError(w, ve.Fields)
 		return
 	}
+
+	// Restrict modifications for assignees who are not the project owner
+	if isAssignee && !isProjectOwner {
+		restrictedUpdates := make(map[string]interface{})
+		if status, ok := updates["status"]; ok {
+			restrictedUpdates["status"] = status
+		}
+		updates = restrictedUpdates
+	}
+
 	if len(updates) == 0 {
 		respondJSON(w, http.StatusOK, task)
 		return

@@ -263,7 +263,6 @@ const ProjectDetailPage: React.FC = () => {
         </div>
       )}
 
-      {/* Task Modal */}
       <TaskModal
         isOpen={showTaskModal}
         onClose={() => { setShowTaskModal(false); setEditingTask(null); }}
@@ -271,6 +270,8 @@ const ProjectDetailPage: React.FC = () => {
         onDelete={handleDeleteTask}
         task={editingTask}
         projectId={id || ''}
+        isProjectOwner={isOwner}
+        isAssignee={editingTask?.assignee_id === user?.id}
       />
     </div>
   );

@@ -46,8 +46,7 @@ func (r *ProjectRepository) ListByUser(ctx context.Context, userID string, page,
 	err := r.pool.QueryRow(ctx,
 		`SELECT COUNT(DISTINCT p.id)
 		 FROM projects p
-		 LEFT JOIN tasks t ON t.project_id = p.id
-		 WHERE p.owner_id = $1 OR t.assignee_id = $1`,
+		 WHERE p.owner_id = $1`,
 		userID,
 	).Scan(&totalCount)
 	if err != nil {
@@ -57,8 +56,7 @@ func (r *ProjectRepository) ListByUser(ctx context.Context, userID string, page,
 	rows, err := r.pool.Query(ctx,
 		`SELECT DISTINCT p.id, p.name, p.description, p.owner_id, p.created_at
 		 FROM projects p
-		 LEFT JOIN tasks t ON t.project_id = p.id
-		 WHERE p.owner_id = $1 OR t.assignee_id = $1
+		 WHERE p.owner_id = $1
 		 ORDER BY p.created_at DESC
 		 LIMIT $2 OFFSET $3`,
 		userID, limit, offset,

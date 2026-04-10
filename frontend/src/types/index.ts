@@ -46,6 +46,9 @@ export interface Task {
   due_date: string | null;
   created_at: string;
   updated_at: string;
+  assignee_name?: string;
+  project_name?: string;
+  project_owner_name?: string;
 }
 
 export interface CreateTaskPayload {

@@ -102,6 +102,7 @@ const MyTasksPage: React.FC = () => {
                       task={task}
                       onEdit={(t) => { setEditingTask(t); setShowTaskModal(true); }}
                       onStatusChange={handleStatusChange}
+                      showProjectInfo={true}
                     />
                   ))}
                 </div>
@@ -118,6 +119,8 @@ const MyTasksPage: React.FC = () => {
         onSave={handleUpdateTask}
         task={editingTask}
         projectId={editingTask ? editingTask.project_id : ''}
+        isProjectOwner={false}
+        isAssignee={true}
       />
     </div>
   );

@@ -57,17 +57,17 @@ func (r *TaskRepository) ListByProject(ctx context.Context, projectID string, st
 	offset := (page - 1) * limit
 
 	// Build WHERE clause dynamically
-	whereClauses := []string{"project_id = $1"}
+	whereClauses := []string{"t.project_id = $1"}
 	args := []interface{}{projectID}
 	argIdx := 2
 
 	if status != nil && *status != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("status = $%d::task_status", argIdx))
+		whereClauses = append(whereClauses, fmt.Sprintf("t.status = $%d::task_status", argIdx))
 		args = append(args, *status)
 		argIdx++
 	}
 	if assignee != nil && *assignee != "" {
-		whereClauses = append(whereClauses, fmt.Sprintf("assignee_id = $%d", argIdx))
+		whereClauses = append(whereClauses, fmt.Sprintf("t.assignee_id = $%d", argIdx))
 		args = append(args, *assignee)
 		argIdx++
 	}
@@ -76,7 +76,7 @@ func (r *TaskRepository) ListByProject(ctx context.Context, projectID string, st
 
 	// Count total matching
 	var totalCount int
-	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM tasks WHERE %s", whereSQL)
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM tasks t WHERE %s", whereSQL)
 	err := r.pool.QueryRow(ctx, countQuery, args...).Scan(&totalCount)
 	if err != nil {
 		return nil, 0, err
@@ -85,8 +85,15 @@ func (r *TaskRepository) ListByProject(ctx context.Context, projectID string, st
 	// Fetch paginated results
 	listArgs := append(args, limit, offset)
 	listQuery := fmt.Sprintf(
-		"SELECT %s FROM tasks WHERE %s ORDER BY created_at DESC LIMIT $%d OFFSET $%d",
-		taskColumns, whereSQL, argIdx, argIdx+1,
+		`SELECT t.id, t.title, t.description, t.status, t.priority,
+		        t.project_id, t.assignee_id, t.created_by, t.due_date,
+		        t.created_at, t.updated_at, u.name as assignee_name
+		 FROM tasks t
+		 LEFT JOIN users u ON t.assignee_id = u.id
+		 WHERE %s
+		 ORDER BY t.created_at DESC
+		 LIMIT $%d OFFSET $%d`,
+		whereSQL, argIdx, argIdx+1,
 	)
 	rows, err := r.pool.Query(ctx, listQuery, listArgs...)
 	if err != nil {
@@ -100,7 +107,7 @@ func (r *TaskRepository) ListByProject(ctx context.Context, projectID string, st
 		if err := rows.Scan(
 			&t.ID, &t.Title, &t.Description, &t.Status, &t.Priority,
 			&t.ProjectID, &t.AssigneeID, &t.CreatedBy, &t.DueDate,
-			&t.CreatedAt, &t.UpdatedAt,
+			&t.CreatedAt, &t.UpdatedAt, &t.AssigneeName,
 		); err != nil {
 			return nil, 0, err
 		}
@@ -179,7 +186,15 @@ func (r *TaskRepository) Delete(ctx context.Context, id string) (bool, error) {
 
 // ListByProjectNoPage returns all tasks for a project (used for project detail).
 func (r *TaskRepository) ListByProjectNoPage(ctx context.Context, projectID string) ([]models.Task, error) {
-	query := fmt.Sprintf("SELECT %s FROM tasks WHERE project_id = $1 ORDER BY created_at DESC", taskColumns)
+	query := `
+		SELECT t.id, t.title, t.description, t.status, t.priority,
+		       t.project_id, t.assignee_id, t.created_by, t.due_date,
+		       t.created_at, t.updated_at, u.name as assignee_name
+		FROM tasks t
+		LEFT JOIN users u ON t.assignee_id = u.id
+		WHERE t.project_id = $1
+		ORDER BY t.created_at DESC
+	`
 	rows, err := r.pool.Query(ctx, query, projectID)
 	if err != nil {
 		return nil, err
@@ -192,7 +207,7 @@ func (r *TaskRepository) ListByProjectNoPage(ctx context.Context, projectID stri
 		if err := rows.Scan(
 			&t.ID, &t.Title, &t.Description, &t.Status, &t.Priority,
 			&t.ProjectID, &t.AssigneeID, &t.CreatedBy, &t.DueDate,
-			&t.CreatedAt, &t.UpdatedAt,
+			&t.CreatedAt, &t.UpdatedAt, &t.AssigneeName,
 		); err != nil {
 			return nil, err
 		}
@@ -203,7 +218,18 @@ func (r *TaskRepository) ListByProjectNoPage(ctx context.Context, projectID stri
 
 // ListByAssignee returns all tasks assigned to a specific user across all projects.
 func (r *TaskRepository) ListByAssignee(ctx context.Context, assigneeID string) ([]models.Task, error) {
-	query := fmt.Sprintf("SELECT %s FROM tasks WHERE assignee_id = $1 ORDER BY created_at DESC", taskColumns)
+	query := `
+		SELECT t.id, t.title, t.description, t.status, t.priority,
+		       t.project_id, t.assignee_id, t.created_by, t.due_date,
+		       t.created_at, t.updated_at, u.name as assignee_name,
+		       p.name as project_name, o.name as project_owner_name
+		FROM tasks t
+		LEFT JOIN users u ON t.assignee_id = u.id
+		LEFT JOIN projects p ON t.project_id = p.id
+		LEFT JOIN users o ON p.owner_id = o.id
+		WHERE t.assignee_id = $1
+		ORDER BY t.created_at DESC
+	`
 	rows, err := r.pool.Query(ctx, query, assigneeID)
 	if err != nil {
 		return nil, err
@@ -216,7 +242,8 @@ func (r *TaskRepository) ListByAssignee(ctx context.Context, assigneeID string) 
 		if err := rows.Scan(
 			&t.ID, &t.Title, &t.Description, &t.Status, &t.Priority,
 			&t.ProjectID, &t.AssigneeID, &t.CreatedBy, &t.DueDate,
-			&t.CreatedAt, &t.UpdatedAt,
+			&t.CreatedAt, &t.UpdatedAt, &t.AssigneeName,
+			&t.ProjectName, &t.ProjectOwnerName,
 		); err != nil {
 			return nil, err
 		}

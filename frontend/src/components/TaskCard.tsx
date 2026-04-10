@@ -5,6 +5,7 @@ interface Props {
   task: Task;
   onEdit: (task: Task) => void;
   onStatusChange: (taskId: string, newStatus: TaskStatus) => void;
+  showProjectInfo?: boolean;
 }
 
 const priorityConfig: Record<string, { label: string; className: string }> = {
@@ -19,7 +20,7 @@ const statusOptions: { value: TaskStatus; label: string }[] = [
   { value: 'done', label: 'Done' },
 ];
 
-const TaskCard: React.FC<Props> = ({ task, onEdit, onStatusChange }) => {
+const TaskCard: React.FC<Props> = ({ task, onEdit, onStatusChange, showProjectInfo }) => {
   const priority = priorityConfig[task.priority] || priorityConfig.medium;
 
   const formatDate = (dateStr: string | null) => {
@@ -39,6 +40,19 @@ const TaskCard: React.FC<Props> = ({ task, onEdit, onStatusChange }) => {
 
       {task.description && (
         <p className="task-card-desc">{task.description}</p>
+      )}
+
+      {showProjectInfo && task.project_name && (
+        <div className="task-card-project-info" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', padding: '0.25rem 0' }}>
+          <div><strong>Project:</strong> {task.project_name}</div>
+          {task.project_owner_name && <div><strong>Assigned by:</strong> {task.project_owner_name}</div>}
+        </div>
+      )}
+
+      {task.assignee_name && (
+        <div className="task-card-assignee" style={{ fontSize: '0.85rem', color: 'var(--primary-color)', marginBottom: '0.5rem', fontWeight: 500 }}>
+          👤 {task.assignee_name}
+        </div>
       )}
 
       <div className="task-card-meta">

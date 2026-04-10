@@ -39,10 +39,13 @@ type Task struct {
 	Priority    string     `json:"priority"`
 	ProjectID   string     `json:"project_id"`
 	AssigneeID  *string    `json:"assignee_id"`
-	CreatedBy   string     `json:"created_by"`
-	DueDate     *time.Time `json:"due_date,omitempty"`
-	CreatedAt   time.Time  `json:"created_at"`
-	UpdatedAt   time.Time  `json:"updated_at"`
+	CreatedBy        string     `json:"created_by"`
+	DueDate          *time.Time `json:"due_date,omitempty"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
+	AssigneeName     *string    `json:"assignee_name,omitempty"`
+	ProjectName      *string    `json:"project_name,omitempty"`
+	ProjectOwnerName *string    `json:"project_owner_name,omitempty"`
 }
 
 // CreateTaskRequest is the payload for POST /projects/:id/tasks.
