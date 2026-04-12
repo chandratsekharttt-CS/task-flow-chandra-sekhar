@@ -3,6 +3,11 @@
 ## 1. Overview
 TaskFlow is a robust, full-stack project management application designed to help teams organize projects, assign tasks, and track their progress efficiently. 
 
+The application is heavily driven by two primary dashboard sections:
+1. **Projects:** Here, you can actively create brand new projects, manage them, and assign new tasks within those projects.
+2. **My Tasks:** This section acts as a personalized inbox. It centrally contains all the tasks currently assigned to the user, pulling from various different projects and assigned by different people.
+
+
 **Tech Stack Used:**
 * **Backend:** Go (Golang) using `go-chi` for lightweight routing.
 * **Database:** PostgreSQL.
@@ -15,7 +20,7 @@ TaskFlow is a robust, full-stack project management application designed to help
 * **Raw SQL (`pgx`) instead of an ORM (like GORM):** To ensure maximum performance and give myself full control over database queries (like complex joins and aggregations for Project Stats), I opted against using an ORM. Writing raw SQL via `pgx` prevents N+1 query issues and makes the database interactions perfectly transparent.
 * **Domain Structure (Handlers -> Repository):** I structured the backend into handlers (HTTP logic) and repositories (Database logic). 
   * *Tradeoff/Omission:* I intentionally left out a middle "Service" layer initially to avoid over-engineering. For an application of this current scope, routing directly from handler to repository is highly efficient. As business rules become more complex, a service interface layer could be introduced later.
-* **Strict Compile-Time Typing:** Custom string types (e.g., `TaskStatus`) are enforced deeply within the Go codebase to prevent raw string bugs.
+
 
 ## 3. Running Locally
 To get the application up and running on your local machine using Docker:
@@ -29,28 +34,15 @@ docker compose up --build
 * **Frontend Application:** http://localhost:3000
 * **Backend API:** http://localhost:8080
 
-### For Co-Developers (Native Setup Without Docker)
-If you are a co-developer looking to actually write code, edit handlers, and run the server natively on your machine without waiting for Docker to rebuild, you will need Go installed. 
-
-Once your Postgres database is running, open a new terminal:
-```bash
-cd backend
-go mod tidy          # Cleans and resolves all package dependencies for your IDE
-go run ./cmd/server/main.go
-```
 
 ## 4. Running Migrations
-Database migrations **run automatically on startup** via the `golang-migrate` package embedded directly into the Go backend's `main.go`. When `docker compose up` is executed, the API service applies any pending `.sql` files automatically before starting the web server.
+Database migrations **run automatically on startup** via the `golang-migrate` package embedded directly into the Go backend's `main.go`. 
 
-If you ever need to run them manually from your host machine (assuming you have `golang-migrate` installed):
-```bash
-migrate -path backend/migrations -database "postgresql://taskflow:taskflow_secret@localhost:5432/taskflow?sslmode=disable" up
-```
 
 ## 5. Test Credentials
 The database automatically seeds itself on its very first run. You can log in immediately to test the functionality without needing to register a new account:
 
-* **Email:** `test@example.com`
+* **Email:** `testuser@taskflow.com`
 * **Password:** `password123`
 
 ## 6. API Reference
@@ -76,15 +68,6 @@ The database automatically seeds itself on its very first run. You can log in im
 * `POST /api/projects/:id/tasks` - Add a task to a project.
 * `PATCH /api/tasks/:id` - Update task details (status, assignee, etc).
 
-**Example Request:** `POST /api/projects/:id/tasks`
-```json
-{
-  "title": "Setup CI/CD Pipeline",
-  "status": "todo",
-  "priority": "high",
-  "assignee_id": "550e8400-e29b-41d4-a716-446655440000"
-}
-```
 
 ## 7. What You'd Do With More Time
 If given more time to expand the scope of this project, I would focus on several key product features and architectural improvements:
@@ -97,5 +80,4 @@ If given more time to expand the scope of this project, I would focus on several
 ### Architectural Improvements
 * **Service Layer & Interface Driven Testing:** I would extract the direct repository calls out of the handlers and put them into a formal "Service" layer defined by Interfaces. This would allow me to easily mock the database logic and write comprehensive unit tests for the API controllers.
 * **Advanced Permissions (RBAC):** Currently, permissions are locked to "Project Owners" or "Assignees". Alongside the Admin approval workflow mentioned above, I would implement a full Role-Based Access Control (RBAC) system with a `project_members` join table to allow distinct "Admin", "Editor", and "Viewer" roles on specific projects.
-* **Redis Caching:** The `/stats` endpoint recalculates task counts directly against the database every time it is hit. With more time, especially if powering a Centralized Global Dashboard, I would wrap this in a Redis caching layer to heavily reduce the database load on high-traffic queries.
 * **API Documentation:** Automatically generate Swagger/OpenAPI documentation directly from the Go struct tags using `swaggo` instead of manually maintaining endpoint lists.
