@@ -123,18 +123,18 @@ func ValidateUpdateTask(body map[string]interface{}) (map[string]interface{}, *V
 	}
 	if status, ok := body["status"]; ok {
 		s, isStr := status.(string)
-		if !isStr || !models.ValidStatuses[s] {
+		if !isStr || !models.ValidStatuses[models.TaskStatus(s)] {
 			ve.Fields["status"] = "must be one of: todo, in_progress, done"
 		} else {
-			updates["status"] = s
+			updates["status"] = models.TaskStatus(s)
 		}
 	}
 	if priority, ok := body["priority"]; ok {
 		s, isStr := priority.(string)
-		if !isStr || !models.ValidPriorities[s] {
+		if !isStr || !models.ValidPriorities[models.TaskPriority(s)] {
 			ve.Fields["priority"] = "must be one of: low, medium, high"
 		} else {
-			updates["priority"] = s
+			updates["priority"] = models.TaskPriority(s)
 		}
 	}
 	if assignee, ok := body["assignee_id"]; ok {

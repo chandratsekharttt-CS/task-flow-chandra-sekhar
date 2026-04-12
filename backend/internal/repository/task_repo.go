@@ -40,7 +40,7 @@ func scanTask(row pgx.Row) (*models.Task, error) {
 }
 
 // Create inserts a new task.
-func (r *TaskRepository) Create(ctx context.Context, title string, description *string, status, priority, projectID string, assigneeID *string, createdBy string, dueDate *string) (*models.Task, error) {
+func (r *TaskRepository) Create(ctx context.Context, title string, description *string, status models.TaskStatus, priority models.TaskPriority, projectID string, assigneeID *string, createdBy string, dueDate *string) (*models.Task, error) {
 	query := fmt.Sprintf(
 		`INSERT INTO tasks (title, description, status, priority, project_id, assignee_id, created_by, due_date)
 		 VALUES ($1, $2, $3::task_status, $4::task_priority, $5, $6, $7, $8::date)
@@ -53,7 +53,7 @@ func (r *TaskRepository) Create(ctx context.Context, title string, description *
 }
 
 // ListByProject returns tasks for a project with optional filters and pagination.
-func (r *TaskRepository) ListByProject(ctx context.Context, projectID string, status, assignee *string, page, limit int) ([]models.Task, int, error) {
+func (r *TaskRepository) ListByProject(ctx context.Context, projectID string, status *models.TaskStatus, assignee *string, page, limit int) ([]models.Task, int, error) {
 	offset := (page - 1) * limit
 
 	// Build WHERE clause dynamically

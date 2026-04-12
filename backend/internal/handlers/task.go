@@ -45,9 +45,11 @@ func (h *TaskHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse filters
-	var status, assignee *string
+	var status *models.TaskStatus
+	var assignee *string
 	if s := r.URL.Query().Get("status"); s != "" {
-		status = &s
+		ts := models.TaskStatus(s)
+		status = &ts
 	}
 	if a := r.URL.Query().Get("assignee"); a != "" {
 		assignee = &a

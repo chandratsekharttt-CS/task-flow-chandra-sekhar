@@ -201,7 +201,7 @@ func seedDatabase(ctx context.Context, userRepo *repository.UserRepository, proj
 		return fmt.Errorf("failed to hash seed password: %w", err)
 	}
 
-	user, err := userRepo.Create(ctx, "Test User", "testuser@taskflow.com", string(hashedPassword))
+	user, err := userRepo.Create(ctx, "Test User", "test@example.com", string(hashedPassword))
 	if err != nil {
 		return fmt.Errorf("failed to create seed user: %w", err)
 	}
